@@ -1,0 +1,133 @@
+// Return a random integer within a given limit, exclusive
+FUNCTION Random(max : INTEGER) RETURNS INTEGER
+    RETURN INT(RAND(max)) + 1
+ENDFUNCTION
+
+PROCEDURE askQuestion(questionIndex : INTEGER)
+    OUTPUT "QUESTION: " & questions[questionIndex]
+ENDPROCEDURE
+
+PROCEDURE parseAnswer(BYREF answer : STRING)
+    // remove whitespace
+    DECLARE i : INTEGER
+    DECLARE parsedAnswer : STRING
+    i ← 1
+    parsedAnswer ← ""
+    answer ← TO_LOWER(answer)
+
+    WHILE i <= LENGTH(answer)
+        IF MID(answer, i, 1) <> " " THEN
+            parsedAnswer ← parsedAnswer & MID(answer, i, 1) 
+        ENDIF
+        i ← i + 1
+    ENDWHILE
+    answer ← parsedAnswer
+ENDPROCEDURE
+
+
+PROCEDURE handleAnswer(questionIndex : INTEGER, answer : STRING, BYREF gameData : GameState)
+
+    IF(TO_LOWER(answer) = TO_LOWER(answers[questionIndex])) THEN
+        gameData.score ← gameData.score + 1
+        OUTPUT "CORRECT!"
+        OUTPUT "SCORE: " & NUM_TO_STR(gameData.score)
+        OUTPUT "ANSWER: " & answers[questionIndex]
+    ELSE
+        gameData.lives ← gameData.lives - 1
+        OUTPUT "INCORRECT!"
+        OUTPUT "LIVES: " & NUM_TO_STR(gameStateData.lives)
+        OUTPUT "ANSWER: " & answers[questionIndex]
+    ENDIF
+    // end program if user loses
+    IF(gameData.lives = 0) THEN
+        OUTPUT "YOU'VE RUN OUT OF LIVES!"
+        OUTPUT "SCORE: " & NUM_TO_STR(gameData.score)
+        OUTPUT "ENDING QUIZ..."
+        gameData.isRunning ← FALSE
+    ENDIF
+ENDPROCEDURE
+
+PROCEDURE FileToArray(filePath : STRING, BYREF arr : ARRAY OF STRING)
+    DECLARE i : INTEGER
+    DECLARE lineoftext : STRING
+
+    i ← 0
+
+    OPENFILE filePath FOR READ
+
+    WHILE NOT EOF (filePath) AND i < 20
+        i ← i + 1
+        READFILE filePath, lineoftext
+        arr[i] ← lineoftext
+    ENDWHILE
+
+    CLOSEFILE filePath
+
+ENDPROCEDURE
+
+TYPE GameState
+    DECLARE isRunning : BOOLEAN
+    DECLARE lives : INTEGER
+    DECLARE numberOfQuestions : INTEGER
+    DECLARE score : INTEGER
+ENDTYPE
+
+
+DECLARE questions : ARRAY[1:20] OF STRING
+DECLARE answers : ARRAY[1:20] OF STRING
+
+DECLARE gameStateData : GameState
+DECLARE questionIndex : INTEGER
+DECLARE answer : STRING
+
+// initialize game data
+gameStateData.isRunning ← TRUE
+gameStateData.lives ← 3
+gameStateData.numberOfQuestions ← 20
+gameStateData.score ← 0
+
+questionIndex ← 0
+
+// load files
+CALL FileToArray("question.txt", questions)
+CALL FileToArray("answer.txt", answers)
+
+// parse asnwers
+
+DECLARE i : INTEGER
+i ← 1
+WHILE i <= gameStateData.numberOfQuestions
+    CALL parseAnswer(answers[i])
+    i ← i + 1
+ENDWHILE
+
+
+WHILE(gameStateData.isRunning)
+
+    // pick and
+    // ask question
+    questionIndex ← Random(gameStateData.numberOfQuestions)
+    CALL askQuestion(questionIndex)
+
+    // take in answer
+    OUTPUT "ANSWER: "
+    INPUT answer
+
+    // do logic
+    CALL parseAnswer(answer)
+    CALL handleAnswer(questionIndex, answer, gameStateData)
+
+ENDWHILE
+
+OUTPUT 
+"⡕⡧⡏⣞⢵⡣⣳⠟⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⡆⠊⠈⣿⢿⡟⠛⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣎⠈⠻
+⣷⣠⠁⢀⠰⠀⣰⣿⣿⣿⣿⣿⣿⠟⠋⠛⠛⠿⠿⢿⣿⣿⣿⣧⠀⢹⣿⡑⠐⢰
+⣿⣿⠀⠁⠀⠀⣿⣿⣿⣿⠟⡩⠐⠀⠀⠀⠀⢐⠠⠈⠊⣿⣿⣿⡇⠘⠁⢀⠆⢀
+⣿⣿⣆⠀⠀⢤⣿⣿⡿⠃⠈⠀⣠⣶⣿⣿⣷⣦⡀⠀⠀⠈⢿⣿⣇⡆⠀⠀⣠⣾
+⣿⣿⣿⣧⣦⣿⣿⣿⡏⠀⠀⣰⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠐⣿⣿⣷⣦⣷⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⣾⣿⣿⠋⠁⠀⠉⠻⣿⣿⣧⠀⠠⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⡀⣿⡿⠁⠀⠀⠀⠀⠀⠘⢿⣿⠀⣺⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⣠⣂⠀⠀⠀⠀⠀⠀⠀⢀⣁⢠⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣄⣤⣤⣔⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿"
